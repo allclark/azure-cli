@@ -14,6 +14,28 @@ __all__ = ['print_detailed_help', 'print_welcome_message', 'GroupHelpFile', 'Com
 
 FIRST_LINE_PREFIX = ': '
 
+PRIVACY_STATEMENT = """
+Welcome to Azure CLI!
+---------------------
+Use `az -h` to see available commands or go to https://aka.ms/cli.
+
+Telemetry
+---------
+The Azure CLI collects usage data in order to improve your experience.
+The data is anonymous and does not include commandline argument values.
+The data is collected by Microsoft.
+
+You can change your telemetry settings with `az configure`.
+"""
+
+
+def show_privacy_statement():
+    from azure.cli.core._config import az_config, set_global_config_value
+    first_ran = az_config.getboolean('core', 'first_run', fallback=False)
+    if not first_ran:
+        print(PRIVACY_STATEMENT, file=sys.stdout)
+        set_global_config_value('core', 'first_run', 'yes')
+
 
 def show_help(nouns, parser, is_group):
     delimiters = ' '.join(nouns)
@@ -31,6 +53,7 @@ def show_help(nouns, parser, is_group):
 
 
 def show_welcome(parser):
+    show_privacy_statement()
     print_welcome_message()
 
     help_file = GroupHelpFile('', parser)
@@ -220,6 +243,8 @@ def _print_examples(help_file):
         indent = 2
         _print_indent('{0}'.format(e.text), indent)
 
+        print('')
+
 
 class HelpObject(object):  # pylint: disable=too-few-public-methods
 
@@ -255,7 +280,7 @@ class HelpFile(HelpObject):  # pylint: disable=too-few-public-methods,too-many-i
         self.type = ''
         self.short_summary = ''
         self.long_summary = ''
-        self.examples = ''
+        self.examples = []
 
     def load(self, options):
         description = getattr(options, 'description', None)
@@ -280,6 +305,20 @@ class HelpFile(HelpObject):  # pylint: disable=too-few-public-methods,too-many-i
         if file_data:
             self._load_from_data(file_data)
 
+    @staticmethod
+    def _should_include_example(ex):
+        min_profile = ex.get('min_profile')
+        max_profile = ex.get('max_profile')
+        if min_profile or max_profile:
+            from azure.cli.core.profiles import supported_api_version, PROFILE_TYPE
+            # yaml will load this as a datetime if it's a date, we need a string.
+            min_profile = str(min_profile) if min_profile else None
+            max_profile = str(max_profile) if max_profile else None
+            return supported_api_version(PROFILE_TYPE,
+                                         min_api=min_profile,
+                                         max_api=max_profile)
+        return True
+
     def _load_from_data(self, data):
         if not data:
             return
@@ -297,7 +336,10 @@ class HelpFile(HelpObject):  # pylint: disable=too-few-public-methods,too-many-i
         self.long_summary = data.get('long-summary')
 
         if 'examples' in data:
-            self.examples = [HelpExample(d) for d in data['examples']]
+            self.examples = []
+            for d in data['examples']:
+                if HelpFile._should_include_example(d):
+                    self.examples.append(HelpExample(d))
 
 
 class GroupHelpFile(HelpFile):  # pylint: disable=too-few-public-methods
@@ -349,17 +391,12 @@ class CommandHelpFile(HelpFile):  # pylint: disable=too-few-public-methods
                 param.update_from_data(loaded_param)
             loaded_params.append(param)
 
-        extra_param = next((p for p in data['parameters']
-                            if p['name'] not in [lp.name for lp in loaded_params]),
-                           None)
-        if extra_param:
-            raise HelpAuthoringException('Extra help param {0}'.format(extra_param['name']))
         self.parameters = loaded_params
 
 
 class HelpParameter(HelpObject):  # pylint: disable=too-few-public-methods, too-many-instance-attributes
 
-    def __init__(self, param_name, description, required, choices=None,  # pylint: disable=too-many-arguments
+    def __init__(self, param_name, description, required, choices=None,
                  default=None, group_name=None):
         super(HelpParameter, self).__init__()
         self.name = param_name

@@ -5,10 +5,22 @@
 
 FROM python:3.5.2-alpine
 
-ENV CLI_VERSION 0.1.5
-ENV CLI_DOWNLOAD_SHA256 cb65651530544c43343e2c80b0d96a681ad0a07367e288ef9fae261093c497f3
-ENV CLI_PATCH1_SHA256 d61ef29ace9bbdfef9a25dfbb1f475225bbca174263c8f863ee70f87d0a78bbe
-ENV CLI_PATCH2_SHA256 ea0879280dbb3074d464752c27bfe01a7673da14137a4c4315d1938a0d05a03e
+ENV CLI_VERSION 0.2.8
+ENV CLI_DOWNLOAD_SHA256 dfe1902e5f0ea14f38b2c1137b71c4d7daa2f0b27869eaf868fc3dfbdb3a366a
+
+# Metadata as defined at http://label-schema.org
+ARG BUILD_DATE
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Microsoft" \
+      org.label-schema.name="Azure CLI 2.0" \
+      org.label-schema.version=$CLI_VERSION \
+      org.label-schema.license="MIT" \
+      org.label-schema.description="The Azure CLI 2.0 is the new Azure CLI and is applicable when you use the Resource Manager deployment model." \
+      org.label-schema.url="https://docs.microsoft.com/en-us/cli/azure/overview" \
+      org.label-schema.usage="https://docs.microsoft.com/en-us/cli/azure/install-az-cli2#docker" \
+      org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.vcs-url="https://github.com/Azure/azure-cli.git" \
+      org.label-schema.docker.cmd="docker run -v ${HOME}:/root -it azuresdk/azure-cli-python:<version>"
 
 # INSTALL DEPENDENCIES
 # pip wheel - required for CLI packaging
@@ -20,7 +32,7 @@ RUN pip install --upgrade pip wheel jmespath-terminal
 # ca-certificates 
 # wget - required for installing jp
 RUN apk update \
-        && apk add bash gcc openssl-dev libffi-dev musl-dev jq openssh ca-certificates wget openssl \
+        && apk add bash gcc openssl-dev libffi-dev musl-dev jq openssh ca-certificates wget openssl git \
         && update-ca-certificates
 # We also, install jp
 RUN wget https://github.com/jmespath/jp/releases/download/0.1.2/jp-linux-amd64 -qO /usr/local/bin/jp \
@@ -34,36 +46,17 @@ RUN src_zip=$(mktemp) \
         && echo "$CLI_DOWNLOAD_SHA256  $src_zip" | sha256sum -c - \
         && tar -xvzf $src_zip -C /cli-src \
         && rm $src_zip
-# Apply patches
-RUN patch1=$(mktemp) \
-        && wget https://azurecliprod.blob.core.windows.net/patches/patch_0.1.5_component_custom.diff -qO $patch1 \
-        && echo "$CLI_PATCH1_SHA256  $patch1" | sha256sum -c - \
-        && patch -p1 /cli-src/*/src/command_modules/azure-cli-component/azure/cli/command_modules/component/custom.py $patch1 \
-        && rm $patch1
-RUN patch2=$(mktemp) \
-        && wget https://azurecliprod.blob.core.windows.net/patches/patch_0.1.5_pkg_util.diff -qO $patch2 \
-        && echo "$CLI_PATCH2_SHA256  $patch2" | sha256sum -c - \
-        && patch -p1 /cli-src/*/src/azure-cli-core/azure/cli/core/_pkg_util.py $patch2 \
-        && rm $patch2
 # Build and install
 RUN /bin/bash -c 'cd /cli-src/*; tmp_pkg_dir=$(mktemp -d); \
-    for d in src/azure-cli src/azure-cli-core src/azure-cli-nspkg src/command_modules/azure-cli-*/; \
+    for d in src/azure-cli src/azure-cli-core src/azure-cli-nspkg src/azure-cli-command_modules-nspkg src/command_modules/azure-cli-*/; \
     do cd $d; python setup.py bdist_wheel -d $tmp_pkg_dir; cd -; \
     done; \
-    pip install azure-cli -f $tmp_pkg_dir;'
-RUN rm -rf /cli-src
-
+    pip install azure-cli -f $tmp_pkg_dir; \
+    pip install --force-reinstall --upgrade azure-nspkg azure-mgmt-nspkg;'
 # Tab completion
-RUN echo -e "\
-_python_argcomplete() {\n\
-    local IFS='\v'\n\
-    COMPREPLY=( \$(IFS=\"\$IFS\"                   COMP_LINE=\"\$COMP_LINE\"                   COMP_POINT=\"\$COMP_POINT\"                   _ARGCOMPLETE_COMP_WORDBREAKS=\"\$COMP_WORDBREAKS\"                   _ARGCOMPLETE=1                   \"\$1\" 8>&1 9>&2 1>/dev/null 2>/dev/null) )\n\
-    if [[ \$? != 0 ]]; then\n\
-        unset COMPREPLY\n\
-    fi\n\
-}\n\
-complete -o nospace -F _python_argcomplete \"az\"\n\
-" > ~/.bashrc
+RUN cat /cli-src/*/az.completion >> ~/.bashrc
+
+RUN rm -rf /cli-src
 
 WORKDIR /
 

@@ -3,262 +3,615 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
-from azure.cli.core.help_files import helps #pylint: disable=unused-import
+from azure.cli.core.help_files import helps  # pylint: disable=unused-import
 
-#pylint: disable=line-too-long
+# pylint: disable=line-too-long
 
 helps['appservice'] = """
     type: group
-    short-summary: commands to manage your Azure web apps and App Service plans
+    short-summary: Manage your App Service plans.
 """
 
 helps['appservice web'] = """
     type: group
-    short-summary: commands to manage web apps
+    short-summary: deprecated, please use 'az webapp'.
 """
 
-helps['appservice web config'] = """
+helps['webapp'] = """
     type: group
-    short-summary: commands to configure the web app
+    short-summary: Manage web apps.
 """
 
-helps['appservice web config show'] = """
-    type: command
-    short-summary: show web app configurations
-"""
-
-helps['appservice web config update'] = """
-    type: command
-    short-summary: update web app configurations
-"""
-
-helps['appservice web config appsettings'] = """
+helps['webapp config'] = """
     type: group
-    short-summary: commands to configure application settings
+    short-summary: Configure a web app.
 """
 
-helps['appservice web config appsettings show'] = """
+helps['webapp config show'] = """
     type: command
-    short-summary: show application settings
+    short-summary: Show web app configurations.
 """
 
-helps['appservice web config appsettings update'] = """
+helps['webapp config set'] = """
     type: command
-    short-summary: create or update application settings
+    short-summary: create or update web app configurations.
 """
 
-helps['appservice web config appsettings delete'] = """
-    type: command
-    short-summary: delete application settings
-"""
-
-helps['appservice web config container'] = """
+helps['webapp config appsettings'] = """
     type: group
-    short-summary: commands to configure container-specific application settings
+    short-summary: Configure web app settings.
 """
 
-helps['appservice web config container show'] = """
+helps['webapp config appsettings show'] = """
     type: command
-    short-summary: show container settings
+    short-summary: Show web app settings.
 """
 
-helps['appservice web config container update'] = """
+helps['webapp config appsettings set'] = """
     type: command
-    short-summary: update container settings
+    short-summary: Create or update web app settings.
+    examples:
+        - name: Set the default node version for a specified web app.
+          text: >
+            az webapp config appsettings set
+            -g MyResourceGroup
+            -n MyUniqueApp
+            --settings WEBSITE_NODE_DEFAULT_VERSION=6.9.1
 """
 
-helps['appservice web config container delete'] = """
-    type: command
-    short-summary: delete container settings
-"""
-
-helps['appservice web config hostname'] = """
+helps['webapp config connection-string'] = """
     type: group
-    short-summary: commands to configure hostnames
+    short-summary: Configure web app connection strings.
 """
 
-helps['appservice web deployment'] = """
+helps['webapp config connection-string show'] = """
+    type: command
+    short-summary: Show connection strings
+"""
+
+helps['webapp config connection-string delete'] = """
+    type: command
+    short-summary: delete connection strings
+"""
+
+helps['webapp config connection-string set'] = """
+    type: command
+    short-summary: Create or update connection strings.
+    examples:
+        - name: add a mysql connection string.
+          text: >
+            az webapp config connection-string set
+            -g MyResourceGroup
+            -n MyUniqueApp
+            -t mysql
+            --settings mysql1='Server=myServer;Database=myDB;Uid=myUser;Pwd=myPwd;'
+"""
+
+helps['webapp config container'] = """
     type: group
-    short-summary: Commands to manage web app deployments
+    short-summary: Configure container specific settings.
 """
 
-helps['appservice web deployment slot'] = """
+helps['webapp config container show'] = """
+    type: command
+    short-summary: Show container settings.
+"""
+
+helps['webapp config container set'] = """
+    type: command
+    short-summary: create or update container settings.
+"""
+
+helps['webapp config container delete'] = """
+    type: command
+    short-summary: Delete container settings.
+"""
+
+helps['webapp config hostname'] = """
     type: group
-    short-summary: Commands to manage web app deployment slots
+    short-summary: Configure hostnames.
 """
 
-helps['appservice web deployment slot auto-swap'] = """
+helps['webapp config ssl'] = """
     type: group
-    short-summary: Commands to enable or disable auto-swap for a web-app deployment slot
+    short-summary: Configure SSL certificates.
 """
 
-helps['appservice web log'] = """
+helps['webapp config ssl list'] = """
+    type: command
+    short-summary: List SSL certificates within a resource group
+"""
+
+helps['webapp config ssl bind'] = """
+    type: command
+    short-summary: Bind an SSL certificate to a web app.
+"""
+
+helps['webapp config ssl unbind'] = """
+    type: command
+    short-summary: Unbind an SSL certificate from a web app.
+"""
+
+helps['webapp config ssl delete'] = """
+    type: command
+    short-summary: Delete an SSL certificate from a web app.
+"""
+
+helps['webapp config ssl upload'] = """
+    type: command
+    short-summary: Upload an SSL certificate to a web app.
+"""
+
+helps['webapp deployment'] = """
     type: group
-    short-summary: commands to manage web app logs
+    short-summary: Manage web app deployments.
 """
 
-helps['appservice web log config'] = """
-    type: command
-    short-summary: configure web app logs
-"""
-
-helps['appservice web deployment'] = """
+helps['webapp deployment source'] = """
     type: group
-    short-summary: commands to manage web app deployments
+    short-summary: Manage deployment source repositories.
 """
 
-helps['appservice web deployment list-site-credentials'] = """
-    type: command
-    short-summary: show site level deployment credentials
-"""
 
-helps['appservice web deployment slot auto-swap'] = """
-    type: command
-    short-summary: configure slot auto swap
-"""
-
-helps['appservice web deployment slot create'] = """
-    type: command
-    short-summary: create a slot
-"""
-
-helps['appservice web deployment slot swap'] = """
-    type: command
-    short-summary: swap slots
-"""
-
-helps['appservice web deployment slot list'] = """
-    type: command
-    short-summary: list all slots
-"""
-
-helps['appservice web deployment slot delete'] = """
-    type: command
-    short-summary: delete a slot
-"""
-
-helps['appservice web deployment user'] = """
+helps['webapp deployment slot'] = """
     type: group
-    short-summary: commands to manage user credentials for a deployment
+    short-summary: Manage web app deployment slots.
 """
 
-helps['appservice web deployment slot'] = """
+helps['webapp deployment slot auto-swap'] = """
     type: group
-    short-summary: commands to manage deployment slots
+    short-summary: Enable or disable auto-swap for a web app deployment slot.
 """
 
-helps['appservice web source-control'] = """
+helps['webapp log'] = """
     type: group
-    short-summary: commands to manage source control systems
+    short-summary: Manage web app logs.
 """
 
-helps['appservice web source-control config'] = """
+helps['webapp log config'] = """
     type: command
-    short-summary: associate to Git or Mercurial repositories
+    short-summary: Configure web app logs.
 """
 
-helps['appservice web source-control config-local-git'] = """
-    type: command
-    short-summary: enable local git
-    long-summary: You will get a url to clone and later push to the web app
+helps['webapp deployment'] = """
+    type: group
+    short-summary: Manage web application deployments.
 """
 
-helps['appservice web source-control delete'] = """
+helps['webapp deployment list-publishing-profiles'] = """
     type: command
-    short-summary: delete source control configurations.
+    short-summary: get publishing endpoints, credentials, database connection strings, etc
 """
 
-helps['appservice web source-control show'] = """
+helps['webapp deployment slot auto-swap'] = """
     type: command
-    short-summary: show source control configurations.
+    short-summary: Configure slot auto swap.
 """
 
-helps['appservice web source-control sync'] = """
+helps['webapp deployment slot create'] = """
     type: command
-    short-summary: synchronize from the source repository, only needed under maunal integration mode.
+    short-summary: Create a slot.
+"""
+
+helps['webapp deployment slot swap'] = """
+    type: command
+    short-summary: Swap slots.
+    examples:
+        - name: Swap a staging slot into production for the specified web app.
+          text: >
+            az webapp deployment slot swap
+            -g MyResourceGroup
+            -n MyUniqueApp
+            --slot staging
+            --target-slot production
+"""
+
+helps['webapp deployment slot list'] = """
+    type: command
+    short-summary: List all slots.
+"""
+
+helps['webapp deployment slot delete'] = """
+    type: command
+    short-summary: Delete a slot.
+"""
+
+helps['webapp deployment user'] = """
+    type: group
+    short-summary: Manage user credentials for a deployment.
+"""
+
+helps['webapp deployment user set'] = """
+    type: command
+    short-summary: Update deployment credentials.
+    long-summary: All web apps in the subscription will be impacted since all web apps share
+                  the same deployment credentials.
+    examples:
+        - name: Set FTP and git deployment credentials for all web apps.
+          text: >
+            az webapp deployment user set
+            --user-name MyUserName
+"""
+
+helps['webapp deployment slot'] = """
+    type: group
+    short-summary: Manage deployment slots.
+"""
+
+helps['webapp deployment source'] = """
+    type: group
+    short-summary: Manage source control systems.
+"""
+
+helps['webapp deployment source config'] = """
+    type: command
+    short-summary: Associate to Git or Mercurial repositories.
+"""
+
+helps['webapp deployment source config-local-git'] = """
+    type: command
+    short-summary: Enable local git.
+    long-summary: Get an endpoint to clone and later push to the web app.
+    examples:
+        - name: Get a git endpoint for a web app and add it as a remote.
+          text: >
+            az webapp source-control config-local-git \\
+                -g MyResourceGroup -n MyUniqueApp
+
+            git remote add azure \\
+                https://<deploy_user_name>@MyUniqueApp.scm.azurewebsites.net/MyUniqueApp.git
+"""
+
+helps['webapp deployment source delete'] = """
+    type: command
+    short-summary: Delete source control configurations.
+"""
+
+helps['webapp deployment source show'] = """
+    type: command
+    short-summary: Show source control configurations.
+"""
+
+helps['webapp deployment source sync'] = """
+    type: command
+    short-summary: Synchronize from the source repository, only needed under manual integration mode.
 """
 
 helps['appservice plan'] = """
     type: group
-    short-summary: Commands to manage App Service plans.
+    short-summary: Manage App Service plans.
 """
 
 helps['appservice plan update'] = """
     type: command
-    short-summary: update an App Service plan
+    short-summary: Update an App Service plan.
 """
 
 helps['appservice plan create'] = """
     type: command
-    short-summary: create an App Service plan
+    short-summary: Create an App Service plan.
+    examples:
+        - name: Create a basic App Service plan.
+          text: >
+            az appservice plan create -g MyResourceGroup -n MyPlan
+        - name: Create a standard App Service plan with with four Linux workers.
+          text: >
+            az appservice plan create
+            -g MyResourceGroup
+            -n MyPlan
+            --is-linux
+            --number-of-workers 4
+            --sku S1
 """
 
 helps['appservice plan delete'] = """
     type: command
-    short-summary: delete an App Service plan
+    short-summary: Delete an App Service plan.
 """
 
 helps['appservice plan list'] = """
     type: command
-    short-summary: list App Service plans
+    short-summary: List App Service plans.
+    examples:
+        - name: List all free tier App Service plans.
+          text: >
+            az appservice plan list --query "[?sku.tier=='Free']"
 """
 
 helps['appservice plan show'] = """
     type: command
-    short-summary: Get the App Service plans for a resource group or a set of resource groups
+    short-summary: Get the App Service plans for a resource group or a set of resource groups.
 """
 
-helps['appservice web config hostname add'] = """
+helps['webapp config hostname add'] = """
     type: command
-    short-summary: bind a hostname (custom domain) to the web app
+    short-summary: Bind a hostname (custom domain) to a web app.
 """
 
-helps['appservice web config hostname delete'] = """
+helps['webapp config hostname delete'] = """
     type: command
-    short-summary: unbind a hostname (custom domain) from the web app
+    short-summary: Unbind a hostname (custom domain) from a web app.
 """
 
-helps['appservice web config hostname list'] = """
+helps['webapp config hostname list'] = """
     type: command
-    short-summary: list all hostname bindings
+    short-summary: List all hostname bindings.
 """
 
-helps['appservice web browse'] = """
+helps['webapp config hostname get-external-ip'] = """
     type: command
-    short-summary: Open the web app in a browser
+    short-summary: get the ip address to configure your DNS settings for A records
 """
 
-helps['appservice web create'] = """
+helps['webapp config backup list'] = """
     type: command
-    short-summary: create a web app
+    short-summary: List all backups of a web app.
 """
 
-helps['appservice web delete'] = """
+helps['webapp config backup create'] = """
     type: command
-    short-summary: delete a web app
+    short-summary: Create a backup of a web app.
 """
 
-helps['appservice web list'] = """
+helps['webapp config backup show'] = """
     type: command
-    short-summary: list web apps
+    short-summary: Show the backup schedule of a web app.
 """
 
-helps['appservice web restart'] = """
+helps['webapp config backup update'] = """
     type: command
-    short-summary: restart a web app
+    short-summary: Configure a new backup schedule.
 """
 
-helps['appservice web start'] = """
+helps['webapp config backup restore'] = """
     type: command
-    short-summary: start a web app
+    short-summary: Restore a web app from a backup.
 """
 
-helps['appservice web show'] = """
+helps['webapp browse'] = """
     type: command
-    short-summary: show a web app
+    short-summary: Open the web app in a browser.
 """
 
-helps['appservice web stop'] = """
+helps['webapp create'] = """
     type: command
-    short-summary: stop a web app
+    short-summary: Create a web app.
+    examples:
+        - name: Create an empty webapp.  Name must be unique to yield a unique FQDN;
+                for example, MyUniqueApp.azurewebsites.net.
+          text: >
+            az webapp create -g MyResourceGroup -p MyPlan -n MyUniqueApp
+        - name: Create a webapp with node 6.2 stack runtime, and local git configured for web deployment
+          text: >
+            az webapp create -g MyResourceGroup -p MyPlan -n MyUniqueApp --runtime "node|6.2" --deployment-local-git
+"""
+
+helps['webapp list-runtimes'] = """
+    type: command
+    short-summary: List built-in web stack runtimes you can use to create new webapps.
+"""
+
+helps['webapp delete'] = """
+    type: command
+    short-summary: Delete a web app.
+"""
+
+helps['webapp list'] = """
+    type: command
+    short-summary: List web apps.
+    examples:
+        - name: List default host name and state for all web apps.
+          text: >
+            az webapp list --query "[].{ hostName: defaultHostName, state: state }"
+        - name: List all running web apps.
+          text: >
+            az webapp list --query "[?state=='Running']"
+"""
+
+helps['webapp restart'] = """
+    type: command
+    short-summary: Restart a web app.
+"""
+
+helps['webapp start'] = """
+    type: command
+    short-summary: Start a web app.
+"""
+
+helps['webapp show'] = """
+    type: command
+    short-summary: Show a web app.
+"""
+
+helps['webapp stop'] = """
+    type: command
+    short-summary: Stop a web app.
+"""
+
+helps['functionapp'] = """
+    type: group
+    short-summary: Manage your function app.
+"""
+
+helps['functionapp create'] = """
+    type: command
+    short-summary: Create a function app.
+    examples:
+        - name: Create a basic function app.  Name must be unique to yield a unique FQDN;
+                for example, MyUniqueApp.azurewebsites.net.
+          text: >
+            az functionapp create
+            -g MyResourceGroup
+            -p MyPlan
+            -n MyUniqueApp
+            -s MyStorageAccount
+"""
+
+helps['functionapp delete'] = """
+    type: command
+    short-summary: Delete a function app.
+"""
+
+helps['functionapp list'] = """
+    type: command
+    short-summary: List function apps.
+    examples:
+        - name: List default host name and state for all function apps.
+          text: >
+            az functionapp list --query "[].{ hostName: defaultHostName, state: state }"
+        - name: List all running function apps.
+          text: >
+            az functionapp list --query "[?state=='Running']"
+"""
+
+helps['functionapp restart'] = """
+    type: command
+    short-summary: Restart a function app.
+"""
+
+helps['functionapp start'] = """
+    type: command
+    short-summary: Start a function app.
+"""
+
+helps['functionapp show'] = """
+    type: command
+    short-summary: Show a function app.
+"""
+
+helps['functionapp stop'] = """
+    type: command
+    short-summary: Stop a function app.
+"""
+
+helps['functionapp config'] = """
+    type: group
+    short-summary: Configure a function app.
+"""
+
+helps['functionapp config appsettings'] = """
+    type: group
+    short-summary: Configure function app settings.
+"""
+
+helps['functionapp config appsettings show'] = """
+    type: command
+    short-summary: Show function app settings.
+"""
+
+helps['functionapp config appsettings set'] = """
+    type: command
+    short-summary: Create or update function app settings.
+"""
+
+helps['functionapp config hostname'] = """
+    type: group
+    short-summary: Configure hostnames.
+"""
+helps['functionapp config hostname add'] = """
+    type: command
+    short-summary: Bind a hostname (custom domain) to a function app.
+"""
+
+helps['functionapp config hostname delete'] = """
+    type: command
+    short-summary: Unbind a hostname (custom domain) from a function app.
+"""
+
+helps['functionapp config hostname list'] = """
+    type: command
+    short-summary: List all hostname bindings.
+"""
+
+helps['functionapp config hostname get-external-ip'] = """
+    type: command
+    short-summary: get the ip address to configure your DNS settings for A records
+"""
+
+helps['functionapp config ssl'] = """
+    type: group
+    short-summary: Configure SSL certificates.
+"""
+
+helps['functionapp config ssl list'] = """
+    type: command
+    short-summary: List SSL certificates within a resource group
+"""
+
+helps['functionapp config ssl bind'] = """
+    type: command
+    short-summary: Bind an SSL certificate to a function app.
+"""
+
+helps['functionapp config ssl unbind'] = """
+    type: command
+    short-summary: Unbind an SSL certificate from a function app.
+"""
+
+helps['functionapp config ssl delete'] = """
+    type: command
+    short-summary: Delete an SSL certificate from a function app.
+"""
+
+helps['functionapp config ssl upload'] = """
+    type: command
+    short-summary: Upload an SSL certificate to a function app.
+"""
+helps['functionapp deployment'] = """
+    type: group
+    short-summary: Manage function app deployments.
+"""
+helps['functionapp deployment source'] = """
+    type: group
+    short-summary: Manage source control systems.
+"""
+
+helps['functionapp deployment source config'] = """
+    type: command
+    short-summary: Associate to Git or Mercurial repositories.
+"""
+
+helps['functionapp deployment source config-local-git'] = """
+    type: command
+    short-summary: Enable local git.
+    long-summary: Get an endpoint to clone and later push to the function app.
+    examples:
+        - name: Get a git endpoint for a web app and add it as a remote.
+          text: >
+            az functionapp source-control config-local-git \\
+                -g MyResourceGroup -n MyUniqueApp
+
+            git remote add azure \\
+                https://<deploy_user_name>@MyUniqueApp.scm.azurewebsites.net/MyUniqueApp.git
+"""
+
+helps['functionapp deployment source delete'] = """
+    type: command
+    short-summary: Delete source control configurations.
+"""
+
+helps['functionapp deployment source show'] = """
+    type: command
+    short-summary: Show source control configurations.
+"""
+
+helps['functionapp deployment source sync'] = """
+    type: command
+    short-summary: Synchronize from the source repository, only needed under manual integration mode.
+"""
+helps['functionapp deployment user'] = """
+    type: group
+    short-summary: Manage user credentials for a deployment.
+"""
+
+helps['functionapp deployment user set'] = """
+    type: command
+    short-summary: Update deployment credentials.
+    long-summary: All function/web apps in the subscription will be impacted since all apps share
+                  the same deployment credentials.
+    examples:
+        - name: Set FTP and git deployment credentials for all function/web apps.
+          text: >
+            az functionapp deployment user set
+            --user-name MyUserName
 """

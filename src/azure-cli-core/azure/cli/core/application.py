@@ -12,13 +12,13 @@ from azure.cli.core.parser import AzCliCommandParser, enable_autocomplete
 from azure.cli.core._output import CommandResultItem
 import azure.cli.core.extensions
 import azure.cli.core._help as _help
-import azure.cli.core._logging as _logging
-from azure.cli.core._util import todict, CLIError
+import azure.cli.core.azlogging as azlogging
+from azure.cli.core.util import todict, truncate_text, CLIError, read_file_content
 from azure.cli.core._config import az_config
 
 import azure.cli.core.telemetry as telemetry
 
-logger = _logging.get_az_logger(__name__)
+logger = azlogging.get_az_logger(__name__)
 
 ARGCOMPLETE_ENV_NAME = '_ARGCOMPLETE'
 
@@ -28,17 +28,68 @@ class Configuration(object):  # pylint: disable=too-few-public-methods
     as output formats, available commands etc.
     """
 
-    def __init__(self, argv):
-        self.argv = argv or sys.argv[1:]
+    def __init__(self):
         self.output_format = None
 
-    def get_command_table(self):  # pylint: disable=no-self-use
+    def get_command_table(self, argv=None):  # pylint: disable=no-self-use
         import azure.cli.core.commands as commands
-        return commands.get_command_table()
+        # Find the first noun on the command line and only load commands from that
+        # module to improve startup time.
+        result = commands.get_command_table(argv[0].lower() if argv else None)
+
+        if argv is None:
+            return result
+
+        command_tree = Configuration.build_command_tree(result)
+        matches = Configuration.find_matches(argv, command_tree)
+        return dict(matches)
 
     def load_params(self, command):  # pylint: disable=no-self-use
         import azure.cli.core.commands as commands
         commands.load_params(command)
+
+    @staticmethod
+    def build_command_tree(command_table):
+        '''From the list of commands names, find the exact match or
+           set of potential matches that we are looking for
+        '''
+        result = {}
+        for command in command_table:
+            index = result
+            parts = command.split()
+            for part in parts[:-1]:
+                if part not in index:
+                    index[part] = {}
+                index = index[part]
+            index[parts[-1]] = command_table[command]
+
+        return result
+
+    @staticmethod
+    def find_matches(parts, commandtable):
+        from .commands import CliCommand
+
+        best_match = commandtable
+        command_so_far = ""
+        try:
+            for part in parts:
+                best_match = best_match[part.lower()]
+                command_so_far = ' '.join((command_so_far, part))
+                if isinstance(best_match, CliCommand):
+                    break
+        except KeyError:
+            pass
+
+        if isinstance(best_match, CliCommand):
+            yield (best_match.name, best_match)
+        else:
+            for part in best_match:
+                cmd = best_match[part]
+                if isinstance(cmd, CliCommand):
+                    yield (cmd.name, cmd)
+                else:
+                    dummy_cmdname = ' '.join((command_so_far, part))
+                    yield (dummy_cmdname, CliCommand(dummy_cmdname, None))
 
 
 class Application(object):
@@ -47,11 +98,12 @@ class Application(object):
     FILTER_RESULT = 'Application.FilterResults'
     GLOBAL_PARSER_CREATED = 'GlobalParser.Created'
     COMMAND_PARSER_LOADED = 'CommandParser.Loaded'
+    COMMAND_PARSER_PARSING = 'CommandParser.Parsing'
     COMMAND_PARSER_PARSED = 'CommandParser.Parsed'
     COMMAND_TABLE_LOADED = 'CommandTable.Loaded'
     COMMAND_TABLE_PARAMS_LOADED = 'CommandTableParams.Loaded'
 
-    def __init__(self, config=None):
+    def __init__(self, configuration=None):
         self._event_handlers = defaultdict(lambda: [])
         self.session = {
             'headers': {
@@ -74,15 +126,14 @@ class Application(object):
         self.raise_event(self.GLOBAL_PARSER_CREATED, global_group=global_group)
 
         self.parser = AzCliCommandParser(prog='az', parents=[self.global_parser])
-
-        self.initialize(config or Configuration([]))
+        self.configuration = configuration
 
     def initialize(self, configuration):
         self.configuration = configuration
 
     def execute(self, unexpanded_argv):  # pylint: disable=too-many-statements
         argv = Application._expand_file_prefixed_files(unexpanded_argv)
-        command_table = self.configuration.get_command_table()
+        command_table = self.configuration.get_command_table(argv)
         self.raise_event(self.COMMAND_TABLE_LOADED, command_table=command_table)
         self.parser.load_command_table(command_table)
         self.raise_event(self.COMMAND_PARSER_LOADED, parser=self.parser)
@@ -91,7 +142,11 @@ class Application(object):
             enable_autocomplete(self.parser)
             az_subparser = self.parser.subparsers[tuple()]
             _help.show_welcome(az_subparser)
-            telemetry.log_telemetry('welcome')
+
+            # TODO: Question, is this needed?
+            telemetry.set_command_details('az')
+            telemetry.set_success(summary='welcome')
+
             return None
 
         if argv[0].lower() == 'help':
@@ -99,13 +154,14 @@ class Application(object):
 
         # Rudimentary parsing to get the command
         nouns = []
-        for noun in argv:
+        for i in range(len(argv)):  # pylint: disable=consider-using-enumerate
             try:
-                if noun[0] == '-':
+                if argv[i][0] == '-':
                     break
             except IndexError:
                 pass
-            nouns.append(noun)
+            argv[i] = argv[i].lower()
+            nouns.append(argv[i])
         command = ' '.join(nouns)
 
         if argv[-1] in ('--help', '-h') or command in command_table:
@@ -116,6 +172,7 @@ class Application(object):
         if self.session['completer_active']:
             enable_autocomplete(self.parser)
 
+        self.raise_event(self.COMMAND_PARSER_PARSING, argv=argv)
         args = self.parser.parse_args(argv)
 
         self.raise_event(self.COMMAND_PARSER_PARSED, command=args.command, args=args)
@@ -139,9 +196,10 @@ class Application(object):
             params.pop('subcommand', None)
             params.pop('func', None)
             params.pop('command', None)
-            telemetry.log_telemetry(expanded_arg.command, log_type='pageview',
-                                    output_type=self.configuration.output_format,
-                                    parameters=[p for p in unexpanded_argv if p.startswith('-')])
+
+            telemetry.set_command_details(expanded_arg.command,
+                                          self.configuration.output_format,
+                                          [p for p in unexpanded_argv if p.startswith('-')])
 
             result = expanded_arg.func(params)
             result = todict(result)
@@ -153,6 +211,7 @@ class Application(object):
         event_data = {'result': results}
         self.raise_event(self.TRANSFORM_RESULT, event_data=event_data)
         self.raise_event(self.FILTER_RESULT, event_data=event_data)
+
         return CommandResultItem(event_data['result'],
                                  table_transformer=command_table[args.command].table_transformer,
                                  is_query_active=self.session['query_active'])
@@ -160,7 +219,8 @@ class Application(object):
     def raise_event(self, name, **kwargs):
         '''Raise the event `name`.
         '''
-        logger.info("Application event '%s' with event data %s", name, kwargs)
+        data = truncate_text(str(kwargs), width=500)
+        logger.debug("Application event '%s' with event data %s", name, data)
         for func in list(self._event_handlers[name]):  # Make copy in case handler modifies the list
             func(**kwargs)
 
@@ -174,7 +234,7 @@ class Application(object):
           event_data: `dict` with event specific data.
         '''
         self._event_handlers[name].append(handler)
-        logger.info("Registered application event handler '%s' at %s", name, handler)
+        logger.debug("Registered application event handler '%s' at %s", name, handler)
 
     def remove(self, name, handler):
         '''Remove a callable that is registered to be called when the
@@ -186,13 +246,13 @@ class Application(object):
           event_data: `dict` with event specific data.
         '''
         self._event_handlers[name].remove(handler)
-        logger.info("Removed application event handler '%s' at %s", name, handler)
+        logger.debug("Removed application event handler '%s' at %s", name, handler)
 
     @staticmethod
     def _register_builtin_arguments(**kwargs):
         global_group = kwargs['global_group']
         global_group.add_argument('--output', '-o', dest='_output_format',
-                                  choices=['json', 'tsv', 'list', 'table', 'jsonc'],
+                                  choices=['json', 'tsv', 'table', 'jsonc'],
                                   default=az_config.get('core', 'output', fallback='json'),
                                   help='Output format',
                                   type=str.lower)
@@ -230,19 +290,13 @@ class Application(object):
 
     @staticmethod
     def _load_file(path):
-        try:
-            if path == '-':
-                content = sys.stdin.read()
-            else:
-                try:
-                    with open(os.path.expanduser(path), 'r') as input_file:
-                        content = input_file.read()
-                except UnicodeDecodeError:
-                    with open(os.path.expanduser(path), 'rb') as input_file:
-                        content = input_file.read()
-            return content[0:-1] if content[-1] == '\n' else content
-        except:
-            raise CLIError('Failed to open file {}'.format(path))
+        if path == '-':
+            content = sys.stdin.read()
+        else:
+            content = read_file_content(os.path.expanduser(path),
+                                        allow_binary=True)
+
+        return content[0:-1] if content and content[-1] == '\n' else content
 
     def _handle_builtin_arguments(self, **kwargs):
         args = kwargs['args']

@@ -76,7 +76,6 @@ helps['account'] = """
 - Don't use "etc". Sometimes it makes sense to spell out a list completely. Sometimes it works to say "like ..." instead of "..., etc".
 - The short summary for a group should start with "Commands to...".
 - Use active voice. For example, say "Update web app configurations" instead of "Updates web app congfigurations" or "Updating web app configurations".
-- Refer to the CLI as "Azure CLI 2.0 (Preview)". We'll drop "(Preview)" when the CLI GAs.
 - Don't use highly formal language. If you imagine that another dev sat down with you and you were telling him what he needs to know to use the command, that's exactly what you need to write, in those words.
 
 # Testing Authored Help #
@@ -103,3 +102,7 @@ Here are the layers of Project Az help, with each layer overriding the layer bel
 | Code Specified |
 | Docstring      |
 | SDK Text       |
+
+## Page titles for command groups ##
+
+Page titles for your command groups as generated from the source are simply the command syntax, "az vm", but we use friendly titles on the published pages - "Virtual machines - az vm". To do that, ee add the friendly part of the page title to [titlemapping.json](https://github.com/Azure/azure-docs-cli-python/blob/master/titleMapping.json) in the azure-docs-cli-python repo. When you add a new command group, make sure to update the mapping.

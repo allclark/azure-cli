@@ -8,10 +8,10 @@
 from codecs import open
 from setuptools import setup
 
-VERSION = "0.1.1+dev"
+VERSION = "3.0.0+dev"
 
 CLASSIFIERS = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'Programming Language :: Python',
@@ -20,6 +20,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: MIT License',
 ]
 
@@ -39,9 +40,11 @@ setup(
     url='https://github.com/Azure/azure-cli',
     zip_safe=False,
     classifiers=CLASSIFIERS,
+    install_requires=[
+        'azure-nspkg>=2.0.0'
+    ],
     packages=[
         'azure',
         'azure.cli',
-        'azure.cli.command_modules'
     ],
 )

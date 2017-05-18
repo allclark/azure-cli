@@ -8,8 +8,14 @@
 
 from codecs import open
 from setuptools import setup
+try:
+    from azure_bdist_wheel import cmdclass
+except ImportError:
+    from distutils import log as logger
+    logger.warn("Wheel is not available, disabling bdist_wheel hook")
+    cmdclass = {}
 
-VERSION = '0.1.1b1+dev'
+VERSION = '0.2.3+dev'
 
 # The full list of classifiers is available at
 # https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -23,6 +29,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: MIT License',
 ]
 
@@ -46,13 +53,12 @@ setup(
     author_email='azpycli@microsoft.com',
     url='https://github.com/Azure/azure-cli',
     classifiers=CLASSIFIERS,
-    namespace_packages=[
+    packages=[
         'azure',
         'azure.cli',
         'azure.cli.command_modules',
-    ],
-    packages=[
         'azure.cli.command_modules.redis',
     ],
     install_requires=DEPENDENCIES,
+    cmdclass=cmdclass
 )

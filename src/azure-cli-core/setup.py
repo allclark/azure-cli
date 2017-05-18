@@ -8,8 +8,14 @@
 from __future__ import print_function
 from codecs import open
 from setuptools import setup
+try:
+    from azure_bdist_wheel import cmdclass
+except ImportError:
+    from distutils import log as logger
+    logger.warn("Wheel is not available, disabling bdist_wheel hook")
+    cmdclass = {}
 
-VERSION = "0.1.1b1+dev"
+VERSION = "2.0.6+dev"
 
 # If we have source, validate that our version numbers match
 # This should prevent uploading releases with mismatched versions.
@@ -30,7 +36,7 @@ else:
         sys.exit(1)
 
 CLASSIFIERS = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'Programming Language :: Python',
@@ -39,6 +45,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: MIT License',
 ]
 
@@ -46,20 +53,18 @@ CLASSIFIERS = [
 DEPENDENCIES = [
     'adal>=0.4.3',
     'applicationinsights',
-    'argcomplete>=1.3.0',
-    'azure-cli-nspkg',
-    'azure-mgmt-trafficmanager==0.30.0rc6',
-    'azure-mgmt-dns==0.30.0rc6',
+    'argcomplete>=1.8.0',
     'colorama',
     'jmespath',
-    'msrest>=0.4.0',
-    'msrestazure>=0.4.0',
+    'msrest>=0.4.4',
+    'msrestazure>=0.4.7',
     'pip',
     'pygments',
+    'pyopenssl>=16.2',  # https://github.com/pyca/pyopenssl/issues/568
     'pyyaml',
     'requests',
     'six',
-    'tabulate',
+    'tabulate==0.7.7',
 ]
 
 if sys.version_info < (3, 4):
@@ -86,14 +91,15 @@ setup(
     url='https://github.com/Azure/azure-cli',
     zip_safe=False,
     classifiers=CLASSIFIERS,
-    namespace_packages=[
-        'azure',
-        'azure.cli'
-    ],
     packages=[
+        'azure',
+        'azure.cli',
         'azure.cli.core',
         'azure.cli.core.commands',
         'azure.cli.core.extensions',
+        'azure.cli.core.sdk',
+        'azure.cli.core.profiles',
     ],
-    install_requires=DEPENDENCIES
+    install_requires=DEPENDENCIES,
+    cmdclass=cmdclass
 )

@@ -19,21 +19,23 @@ RUN pip install --upgrade pip wheel jmespath-terminal
 # openssh - included for ssh-keygen
 # ca-certificates 
 # wget - required for installing jp
-RUN apk update && apk add bash gcc openssl-dev libffi-dev musl-dev jq openssh ca-certificates wget openssl && update-ca-certificates
+RUN apk update && apk add bash gcc openssl-dev libffi-dev musl-dev jq openssh ca-certificates wget openssl git && update-ca-certificates
 # We also, install jp
 RUN wget https://github.com/jmespath/jp/releases/download/0.1.2/jp-linux-amd64 -qO /usr/local/bin/jp && chmod +x /usr/local/bin/jp
 
 # 1. Build packages and store in tmp dir
 # 2. Install the cli and the other command modules that weren't included
+# 3. Temporary fix - install azure-nspkg to remove import of pkg_resources in azure/__init__.py (to improve performance)
 RUN /bin/bash -c 'TMP_PKG_DIR=$(mktemp -d); \
-    for d in src/azure-cli src/azure-cli-core src/azure-cli-nspkg src/command_modules/azure-cli-*/; \
+    for d in src/azure-cli src/azure-cli-core src/azure-cli-nspkg src/azure-cli-command_modules-nspkg src/command_modules/azure-cli-*/; \
     do cd $d; python setup.py bdist_wheel -d $TMP_PKG_DIR; cd -; \
     done; \
     MODULE_NAMES=""; \
-    for m in src/command_modules/azure-cli-*/; \
-    do MODULE_NAMES="$MODULE_NAMES $(echo $m | cut -d '/' -f 3)"; \
+    for f in $TMP_PKG_DIR/*; \
+    do MODULE_NAMES="$MODULE_NAMES $f"; \
     done; \
-    pip install azure-cli $MODULE_NAMES -f $TMP_PKG_DIR;'
+    pip install $MODULE_NAMES; \
+    pip install --force-reinstall --upgrade azure-nspkg azure-mgmt-nspkg;'
 
 # Tab completion
 RUN echo -e "\

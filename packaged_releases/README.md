@@ -3,70 +3,52 @@ Creating a Packaged Release
 
 This document provides instructions on creating a packaged release.
 
-Throughout this document, `{VERSION}` refers to a semantic version for this packaged release (e.g. `0.1.5`).
+Throughout this document, `{VERSION}` refers to a semantic version for this packaged release (e.g. `0.2.3`).
 
 
-1 - Assemble module source code
--------------------------------
-
-To assemble the source code, visit [Releases](https://github.com/Azure/azure-cli/releases) and download the source code for each component (and version) that should be part of the packaged release.  
-
-Use the downloaded source code to create a directory with the structure outlined below.
-
-Make a directory with name `azure-cli_packaged_{VERSION}`:
-```
-$ mkdir azure-cli_packaged_{VERSION}
-```
-
-**IMPORTANT** - The builds expect a certain folder structure.  
-Expected folder structure inside of `azure-cli_packaged_{VERSION}`:
-```
-.
-|-- src
-|   |-- azure-cli
-|       |-- setup.py
-|       `-- etc...
-|   |-- azure-cli-core
-|       |-- setup.py
-|       `-- etc...
-|   |-- azure-cli-nspkg
-|       |-- setup.py
-|       `-- etc...
-|   |-- command_modules
-|       |-- <MODULE_NAME>
-|           |-- setup.py
-|           `-- etc...
-```
-
-(A script may be available in the future to make this step more straightforward.)
-
-Notes:  
-- Only the packages that will be in the CLI should be included here; leave out 'optional' components unless there's a specific reason to include any extra components.
-- Make sure the versions of components don't include the `+dev` suffix. Remove these if this is the case.
-
-
-2 - Create release archive
+1 - Create release archive
 --------------------------
 
 We create a `.tar.gz` containing the source code for the packaged release.  
 This archive will be used as the basis for the Docker, Debian and Homebrew builds as they build from this source.
 
-The archive should have the following name `azure-cli_packaged_{VERSION}.tar.gz`.
-
-Archive the assembled source code from above:
+Clone the repo afresh:  
 ```
-$ tar -cvzf azure-cli_packaged_{VERSION}.tar.gz azure-cli_packaged_{VERSION}/
+$ git clone https://github.com/azure/azure-cli
 ```
 
+Run the script to create the release archive from the 'scripts' folder at the repo root:  
+```
+$ cd scripts
+$ python -m automation.release.packaged --version {VERSION} --components azure-cli=VERSION ...
+```
 
-3 - Upload release archive
+A full example:  
+```
+$ cat ~/cli-components.json
+{
+    "azure-cli": "2.0.1",
+    "azure-cli-core": "2.0.1",
+    "azure-cli-component": "2.0.0",
+    "azure-cli-acs": "2.0.0"
+}
+$ python -m automation.release.packaged --version 0.2.3 -f ~/cli-components.json
+```
+
+OR
+
+```
+$ python -m automation.release.packaged --version 0.2.3 --components azure-cli=2.0.1 acs=2.0.1 appservice=0.1.1b6 batch=0.1.1b5 cloud=2.0.0 component=2.0.0 configure=2.0.1 container=0.1.1b4 core=2.0.1 documentdb=0.1.1b2 feedback=2.0.0 find=0.0.1b1 iot=0.1.1b3 keyvault=0.1.1b6 network=2.0.1 nspkg=2.0.0 profile=2.0.1 redis=0.1.1b3 resource=2.0.1 role=2.0.0 sql=0.1.1b6 storage=2.0.1 vm=2.0.1
+```
+
+2 - Upload release archive
 --------------------------
 
 The release archive should be uploaded to a storage account.
 
 Upload the archive:
 ```
-$ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string  -g {RG} -n azurecliprod -otsv)
+$ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string  -g azure-cli-prod -n azurecliprod -otsv)
 $ az storage blob upload -f azure-cli_packaged_{VERSION}.tar.gz -n azure-cli_packaged_{VERSION}.tar.gz -c releases
 ```
 
@@ -77,33 +59,18 @@ $ az storage blob url -c releases -n azure-cli_packaged_{VERSION}.tar.gz
 
 An example URL is `https://azurecliprod.blob.core.windows.net/releases/azure-cli_packaged_{VERSION}.tar.gz`.
 
+Get the SHA256 checksum:
+```
+$ shasum -a 256 azure-cli_packaged_{VERSION}.tar.gz
+```
 
-4 - Modify and publish any updates to patches
----------------------------------------------
-
-This step is only required if there are changes to a patch / or a new patch.  
-If a change is not required, you can use the same patch from the previous version and so there's no need to change the patch URLs.  
-You can determine if a change is required by running `git diff` on the original files to be patched. If they are the same, the previous patch will work fine.
-
-
-To create a new patch do the following:  
-1. Change directory into the git repo.  
-2. Modify the file in question (You can use the `patch_*` files in `patches` subdirectory for this).  
-3. Run git diff to get the patch. (e.g. `git diff src/command_modules/azure-cli-component/azure/cli/command_modules/component/custom.py > patch_{VERSION}_component_custom.diff`)  
-4. Publish the patch publicly. 
-    (e.g.: `az storage blob upload -c patches -f <patch-diff> -n <patch-diff>`)  
-
-Notes:
-- If a patch needs modification, `debian`, `docker` and `homebrew` builds will all need to be modified.
-
-
-5 - Build/Release for Debian, Docker, Homebrew
+3 - Build/Release for Debian, Docker, Homebrew
 ----------------------------------------------
 
-Follow the instructions in the `debian`, `docker` and `homebrew` subdirectories to create these releases.
+Follow the instructions in the `debian`, `docker`, `windows` and `homebrew` subdirectories to create these releases.
 
 
-6 - Modify HISTORY.md
+4 - Modify HISTORY.md
 ---------------------
 
 Modify the packaged release history with release notes on this release and create a PR for this change.

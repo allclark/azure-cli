@@ -8,10 +8,9 @@ import os
 import os.path
 import sys
 
-from azure.cli.core.test_utils.vcr_test_base import COMMAND_COVERAGE_CONTROL_ENV
-
 import automation.tests.nose_helper as automation_tests
 import automation.utilities.path as automation_path
+from azure.cli.testsdk.vcr_test_base import COMMAND_COVERAGE_CONTROL_ENV
 
 
 # pylint: disable=too-few-public-methods
@@ -37,7 +36,6 @@ class CommandCoverageContext(object):
         return self._data_file_path
 
 
-# TODO: Fix track command logic in vcr_test_base.py.
 def run_command_coverage(modules):
     test_result_dir = automation_path.get_test_results_dir(with_timestamp=True, prefix='cmdcov')
     data_file = os.path.join(test_result_dir, 'cmdcov.data')

@@ -7,11 +7,17 @@
 
 from codecs import open
 from setuptools import setup
+try:
+    from azure_bdist_wheel import cmdclass
+except ImportError:
+    from distutils import log as logger
+    logger.warn("Wheel is not available, disabling bdist_wheel hook")
+    cmdclass = {}
 
-VERSION = '0.1.1b1+dev'
+VERSION = '2.0.6+dev'
 
 CLASSIFIERS = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'Programming Language :: Python',
@@ -20,14 +26,15 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: MIT License',
 ]
 
 DEPENDENCIES = [
-    'azure-mgmt-network==0.30.0',
-    'azure-mgmt-trafficmanager==0.30.0rc6',
-    'azure-mgmt-dns==0.30.0rc6',
-    'azure-mgmt-resource==0.30.2',
+    'azure-mgmt-network==1.0.0rc3',
+    'azure-mgmt-trafficmanager==0.30.0',
+    'azure-mgmt-dns==1.0.1',
+    'azure-mgmt-resource==1.1.0rc1',
     'azure-cli-core'
 ]
 
@@ -46,62 +53,13 @@ setup(
     author_email='azpycli@microsoft.com',
     url='https://github.com/Azure/azure-cli',
     classifiers=CLASSIFIERS,
-    namespace_packages=[
+    packages=[
         'azure',
         'azure.cli',
         'azure.cli.command_modules',
-    ],
-    packages=[
         'azure.cli.command_modules.network',
-        'azure.cli.command_modules.network.mgmt_app_gateway',
-        'azure.cli.command_modules.network.mgmt_app_gateway.lib',
-        'azure.cli.command_modules.network.mgmt_app_gateway.lib.models',
-        'azure.cli.command_modules.network.mgmt_app_gateway.lib.operations',
-        'azure.cli.command_modules.network.mgmt_vnet',
-        'azure.cli.command_modules.network.mgmt_vnet.lib',
-        'azure.cli.command_modules.network.mgmt_vnet.lib.models',
-        'azure.cli.command_modules.network.mgmt_vnet.lib.operations',
-        'azure.cli.command_modules.network.mgmt_public_ip',
-        'azure.cli.command_modules.network.mgmt_public_ip.lib',
-        'azure.cli.command_modules.network.mgmt_public_ip.lib.models',
-        'azure.cli.command_modules.network.mgmt_public_ip.lib.operations',
-        'azure.cli.command_modules.network.mgmt_lb',
-        'azure.cli.command_modules.network.mgmt_lb.lib',
-        'azure.cli.command_modules.network.mgmt_lb.lib.models',
-        'azure.cli.command_modules.network.mgmt_lb.lib.operations',
-        'azure.cli.command_modules.network.mgmt_nsg',
-        'azure.cli.command_modules.network.mgmt_nsg.lib',
-        'azure.cli.command_modules.network.mgmt_nsg.lib.models',
-        'azure.cli.command_modules.network.mgmt_nsg.lib.operations',
-        'azure.cli.command_modules.network.mgmt_nic',
-        'azure.cli.command_modules.network.mgmt_nic.lib',
-        'azure.cli.command_modules.network.mgmt_nic.lib.models',
-        'azure.cli.command_modules.network.mgmt_nic.lib.operations',
-        'azure.cli.command_modules.network.mgmt_local_gateway',
-        'azure.cli.command_modules.network.mgmt_local_gateway.lib',
-        'azure.cli.command_modules.network.mgmt_local_gateway.lib.models',
-        'azure.cli.command_modules.network.mgmt_local_gateway.lib.operations',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib.models',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib.operations',
-        'azure.cli.command_modules.network.mgmt_vpn_connection',
-        'azure.cli.command_modules.network.mgmt_vpn_connection.lib',
-        'azure.cli.command_modules.network.mgmt_vpn_connection.lib.models',
-        'azure.cli.command_modules.network.mgmt_vpn_connection.lib.operations',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib.models',
-        'azure.cli.command_modules.network.mgmt_vnet_gateway.lib.operations',
-        'azure.cli.command_modules.network.mgmt_express_route_circuit',
-        'azure.cli.command_modules.network.mgmt_express_route_circuit.lib',
-        'azure.cli.command_modules.network.mgmt_express_route_circuit.lib.models',
-        'azure.cli.command_modules.network.mgmt_express_route_circuit.lib.operations',
-        'azure.cli.command_modules.network.mgmt_traffic_manager_profile',
-        'azure.cli.command_modules.network.mgmt_traffic_manager_profile.lib',
-        'azure.cli.command_modules.network.mgmt_traffic_manager_profile.lib.models',
-        'azure.cli.command_modules.network.mgmt_traffic_manager_profile.lib.operations',
         'azure.cli.command_modules.network.zone_file'
     ],
     install_requires=DEPENDENCIES,
+    cmdclass=cmdclass
 )

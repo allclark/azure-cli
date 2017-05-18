@@ -30,12 +30,12 @@ If you specify a default value in your function signature, this will flag the ar
 Before your command can be used in the CLI, it must be registered. Insert the following statement in your file:
 
 ```Python
-from azure.cli.commands import cli_command
+from azure.cli.core.commands import cli_command
 ```
 
 The signature of this method is 
 ```Python
-def cli_command(module_name, name, operation, client_factory=None, transform=None, table_transformer=None):
+def cli_command(module_name, name, operation, client_factory=None, transform=None, table_transformer=None, confirmation=None):
 ```
 You will generally only specify `name`, `operation` and possibly `table_transformer`.
   - `module_name` - The name of the module that is registering the command (e.g. `azure.cli.command_modules.vm.commands`). Typically this will be `__name__`.
@@ -43,6 +43,7 @@ You will generally only specify `name`, `operation` and possibly `table_transfor
   - `operation` - The handler that will be executed. Format is `<module_to_import>#<attribute_list>`
       - For example if `operation='azure.mgmt.compute.operations.virtual_machines_operations#VirtualMachinesOperations.get'`, the CLI will import `azure.mgmt.compute.operations.virtual_machines_operations`, get the `VirtualMachinesOperations` attribute and then the `get` attribute of `VirtualMachinesOperations`.
   - `table_transformer` (optional) - Supply a callable that takes, transforms and returns a result for table output.
+  - `confirmation` (optional) - Supply True to enable default confirmation. Alternatively, supply a callable that takes the command arguments as a dict and returning a boolean. Alternatively, supply a string for the prompt.
 
 At this point, you should be able to access your command using `az [name]` and access the built-in help with `az [name] -h/--help`. Your command will automatically be 'wired up' with the global parameters.
 
@@ -52,7 +53,7 @@ See the following for guidance on writing a help entry: https://github.com/Azure
 
 **Customizing Arguments**
 
-There are a number of customizations that you can make to the arguments of a command that alter their behavior within the CLI. To modify/enhance your command arguments, use the `register_cli_argument` method from the `azure.cli.commands` package. For the standard modules, these entries are contained within a file called `_params.py`. 
+There are a number of customizations that you can make to the arguments of a command that alter their behavior within the CLI. To modify/enhance your command arguments, use the `register_cli_argument` method from the `azure.cli.core.commands` package. For the standard modules, these entries are contained within a file called `_params.py`. 
 
 The signature of this method is
 ```Python
@@ -74,7 +75,7 @@ Like CSS rules, modifications are applied in order from generic to specific.
 register_cli_argument('mypackage', 'my_param', ...)  # applies to both command1 and command2
 register_cli_argument('mypackage command2', 'my_param', ...)  # command2 inherits and build upon the previous changes
 ```
-- `arg_type` - An instance of the `azure.cli.commands.CliArgumentType` class. This essentially serves as a named, reusable packaging of the `kwargs` that modify your command's argument. It is useful when you want to reuse an argument definition, but is generally not required. It is most commonly used for name type parameters.
+- `arg_type` - An instance of the `azure.cli.core.commands.CliArgumentType` class. This essentially serves as a named, reusable packaging of the `kwargs` that modify your command's argument. It is useful when you want to reuse an argument definition, but is generally not required. It is most commonly used for name type parameters.
 - `kwargs` - Most likely, you will simply specify keyword arguments in `register_cli_argument` that will accomplish what you need.  Any `kwargs` specified will override or extended the definition in `arg_type`, if provided.
 
 The follow keyword arguments are supported:
@@ -99,7 +100,7 @@ Supporting the IDs Parameter
 
 Most ARM resources can be identified by an ID. In many cases, for example show and delete commands, it may be more useful to copy and paste an ID to identify the target resource instead of having to specify the names of the resource group, the resource, and the parent resource (if any).
 
-Azure CLI 2.0 Preview supports exposing an `--ids` parameter that will parse a resource ID into its constituent named parts so that this parsing need not be done as part of a client script. Additionally `--ids` will accept a _list_ of space separated IDs, allowing the client to loop the command over each ID.
+Azure CLI 2.0 supports exposing an `--ids` parameter that will parse a resource ID into its constituent named parts so that this parsing need not be done as part of a client script. Additionally `--ids` will accept a _list_ of space separated IDs, allowing the client to loop the command over each ID.
 
 Enabling this functionality only requires the command author specify the appropriate values for `id_part` in their calls to `register_cli_argument`.
 

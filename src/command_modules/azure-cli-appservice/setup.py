@@ -7,8 +7,14 @@
 
 from codecs import open
 from setuptools import setup
+try:
+    from azure_bdist_wheel import cmdclass
+except ImportError:
+    from distutils import log as logger
+    logger.warn("Wheel is not available, disabling bdist_wheel hook")
+    cmdclass = {}
 
-VERSION = '0.1.1b1+dev'
+VERSION = '0.1.6+dev'
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -20,14 +26,18 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: MIT License',
 ]
 
 DEPENDENCIES = [
     'azure-cli-core',
-    'azure-mgmt-web==0.30.1',
+    'azure-mgmt-web==0.32.0',
     # v1.17 breaks on wildcard cert https://github.com/shazow/urllib3/issues/981
-    'urllib3[secure]==1.16'
+    'urllib3[secure]==1.16',
+    'xmltodict',
+    'pyOpenSSL',
+    'vsts-cd-manager',
 ]
 
 with open('README.rst', 'r', encoding='utf-8') as f:
@@ -45,13 +55,12 @@ setup(
     author_email='azpycli@microsoft.com',
     url='https://github.com/Azure/azure-cli',
     classifiers=CLASSIFIERS,
-    namespace_packages=[
+    packages=[
         'azure',
         'azure.cli',
         'azure.cli.command_modules',
-    ],
-    packages=[
         'azure.cli.command_modules.appservice'
     ],
     install_requires=DEPENDENCIES,
+    cmdclass=cmdclass
 )
